@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="header.svg" alt="Frida Mobile Setup Banner" width="800">
+</p>
+
 # Frida-Mobile-Setup 📱🛡️
 
 A comprehensive automated setup for Mobile Pentesting on Android Emulators. This repository provides scripts to automate the installation of Burp Suite certificates into the System store, configure global proxies, block QUIC to force interception, and bypass SSL pinning using Frida.
