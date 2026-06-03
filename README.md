@@ -4,77 +4,60 @@
 
 # Frida-Mobile-Setup 📱🛡️
 
-A comprehensive automated setup for Mobile Pentesting on Android Emulators. This repository provides scripts to automate the installation of Burp Suite certificates into the System store, configure global proxies, block QUIC to force interception, and bypass SSL pinning using Frida.
+A comprehensive automated setup for Mobile Pentesting on **Android** and **iOS**. This repository provides scripts to automate certificate injection, configure proxies, and bypass SSL pinning using Frida.
 
 ## 🚀 Features
-- **Automated Cert Injection:** Downloads and installs Burp Suite CA as a System Trusted credential (bypassing Android 7+ restrictions).
-- **Universal SSL Pinning Bypass:** Multi-layered Frida script targeting Conscrypt, OkHttp 3/4, TrustKit, WebView, and more.
-- **Connectivity Bypass:** Fakes "Connected" status in `ConnectivityManager` to resolve "No Internet" errors during interception.
-- **Persistent Proxy & DNS:** Configures `10.0.2.2:9090` and `8.8.8.8` globally on the device.
-- **QUIC Blocking:** Prevents Google services from bypassing the HTTP proxy via UDP/443.
+- **Universal SSL Pinning Bypass:** Multi-layered Frida script targeting Android (Java) and iOS (Objective-C).
+- **Automated Android Cert Injection:** Downloads and installs Burp Suite CA as a System Trusted credential (bypassing Android 7+ restrictions).
+- **Cross-Platform Support:** Single script handles both platforms with auto-detection.
+- **Connectivity Bypass:** Fakes "Connected" status in `ConnectivityManager` (Android) to resolve "No Internet" errors.
+- **Persistent Proxy & DNS:** Configures standard interception defaults.
 
 ## 📁 Repository Structure
 ```text
 Frida-Mobile-Setup/
-├── setup.sh       # Main environment setup (Proxy, Certs, DNS, Frida-Server)
-├── bypass.js      # Universal SSL & Connectivity Bypass (Frida)
+├── setup.sh       # Environment setup (Proxy, Certs, Frida-Server)
+├── bypass.js      # Universal SSL & Connectivity Bypass (Android/iOS)
 ├── run_bypass.sh  # Helper to launch ANY app with Frida
-└── README.md          # Documentation
+└── README.md      # Documentation
 ```
 
 ## 🛠️ Installation & Usage
 
 ### 1. Initial Environment Setup
-Run this once after starting your emulator to prepare the certificate and Frida-server:
+Connect your device via USB and run the setup script:
 ```bash
 ./setup.sh
 ```
+*Note: For iOS, ensure the device is jailbroken and `frida-server` is installed via Cydia/Sileo.*
 
 ### 2. Bypassing Any Application
-Launch any app by its package name. This will bypass SSL pinning and "No Internet" detection:
+Launch any app by its package name (Android) or Bundle ID (iOS). This will bypass SSL pinning and connectivity checks:
 ```bash
-# General Usage:
-./run_bypass.sh <package_name>
-
-# Example (Chrome):
+# Android Example:
 ./run_bypass.sh com.android.chrome
 
-# Example (Specific App):
-./run_bypass.sh com.example.app
+# iOS Example:
+./run_bypass.sh com.apple.mobilesafari
 ```
 
-## 📸 Technical Workflow
+## 🍏 iOS Specific Instructions
 
-### Environment Initialization
-The `setup.sh` script performs a volatile system injection using a `tmpfs` bind-mount. This allows us to write to the read-only `/system/etc/security/cacerts/` directory without permanently modifying the system image.
+### Certificate Installation
+Automatic injection is not supported on iOS due to trust store encryption.
+1. Configure your device to use Burp Suite as a proxy.
+2. Navigate to `http://burp` in Safari.
+3. Download and install the Configuration Profile.
+4. Go to **Settings > General > About > Certificate Trust Settings** and enable "Full Trust" for the Burp CA.
 
-### SSL Pinning Bypass
-The `bypass.js` script targets several key Android components:
-- `TrustManagerImpl.checkServerTrusted`
-- `okhttp3.CertificatePinner`
-- `android.webkit.WebViewClient`
-- `OpenSSLSocketImpl`
+### Frida Setup
+Ensure you have the latest `frida-server` installed on your jailbroken device. You can verify connectivity with:
+```bash
+frida-ls-devices
+```
 
-## ⚠️ Troubleshooting
-
-### "No response received from remote server" (Burp Error)
-If you see a Burp Suite error page in your mobile browser:
-1. **Intercept is ON:** Ensure `Proxy > Intercept` is **OFF** in Burp Suite.
-2. **Burp Outbound Blocked:** Ensure your host machine has internet access and Burp isn't blocked by a firewall.
-3. **DNS Issue:** The `setup.sh` script sets the device DNS to `8.8.8.8`. If your network blocks external DNS, you may need to edit `setup.sh` to use your local DNS.
-
-### "Unusual Traffic" / CAPTCHA (Google Error)
-Google detects Burp's request headers:
-- Disable all `Proxy > Proxy settings > Match and replace` rules.
-- Test with `https://bing.com` or `https://example.com` to verify interception works.
-
-### Frida Errno 2 (File not found)
-- Ensure you are running the scripts from the **root** of the repository:
-  `cd Frida-Mobile-Setup && ./run_bypass.sh`
-- Do not run them from inside a `scripts/` folder.
+## 🤖 Android Technical Workflow
+The `setup.sh` script performs a volatile system injection using a `tmpfs` bind-mount. This allows us to write to the read-only `/system/etc/security/cacerts/` directory without permanently modifying the system image. It also blocks **QUIC (UDP/443)** to force all traffic through the HTTP proxy.
 
 ## ⚖️ Disclaimer
 This project is for educational and authorized security testing purposes only.
-
----
-
